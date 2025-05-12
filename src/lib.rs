@@ -456,6 +456,7 @@ unsafe impl defmt::Logger for Logger {
         INTERRUPTS_ACTIVE.store(primask.is_active(), Ordering::Relaxed);
 
         // safety: accessing the `static mut` is OK because we have disabled interrupts.
+        #[allow(static_mut_refs)]
         unsafe { ENCODER.start_frame(do_write) }
     }
 
@@ -470,6 +471,7 @@ unsafe impl defmt::Logger for Logger {
         // a latching fault condition
 
         // safety: accessing the `static mut` is OK because we have disabled interrupts.
+        #[allow(static_mut_refs)]
         ENCODER.end_frame(do_write);
 
         // If a grant is active, take it and commit it
@@ -496,6 +498,7 @@ unsafe impl defmt::Logger for Logger {
         }
 
         // safety: accessing the `static mut` is OK because we have disabled interrupts.
+        #[allow(static_mut_refs)]
         ENCODER.write(bytes, do_write);
     }
 }
