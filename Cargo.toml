@@ -27,10 +27,6 @@ version = "0.1.0"
 default-features = false
 features = ["critical-section", "maitake-sync-0_2"]
 
-[dependencies.bbqueue]
-version = "0.5.1"
-features = ["defmt_0_3"]
-
 [features]
 default = [
     # NOTE: It is *strongly* recommended to use the rzcobs encoding when

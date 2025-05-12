@@ -132,23 +132,7 @@ pub enum Error {
     /// a failure in the library. If you see this error, please ensure that you
     /// call `defmt-bbq::init()` before making any defmt logging statements.
     UseBeforeInitLatchingFault,
-
-    /// This indicates some potentially recoverable bbqerror (including no
-    /// data currently available).
-    Bbq(BBQError),
 }
-
-impl From<BBQError> for Error {
-    fn from(other: BBQError) -> Self {
-        Error::Bbq(other)
-    }
-}
-
-/// An error returned by the underlying bbqueue storage
-///
-/// It is a re-export of the [bbqueue::Error](https://docs.rs/bbqueue/latest/bbqueue/enum.Error.html) type.
-///
-pub use bbqueue::Error as BBQError;
 
 // ----------------------------------------------------------------------------
 // init() function - this is the (only) user facing interface
