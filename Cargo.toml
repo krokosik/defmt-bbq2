@@ -1,5 +1,6 @@
 [package]
 authors = [
+    "krokosik <krokosik@pm.me>",
     "James Munns <james@onevariable.com>",
     "The Knurling-rs developers",
 ]
@@ -12,12 +13,13 @@ keywords = [
     "defmt-transport"
 ]
 license = "MIT OR Apache-2.0"
-name = "defmt-bbq"
+name = "defmt-bbq2"
 readme = "README.md"
-repository = "https://github.com/jamesmunns/defmt-bbq"
+repository = "https://github.com/krokosik/defmt-bbq2"
 version = "0.1.0"
 
 [dependencies]
+bbq2 = "0.1.0"
 cortex-m = "0.7"
 defmt = "0.3"
 

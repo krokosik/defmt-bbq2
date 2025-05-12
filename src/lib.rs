@@ -113,7 +113,7 @@ use core::{
 use cortex_m::{interrupt, register};
 
 /// BBQueue buffer size. Default: 1024; can be customized by setting the
-/// `DEFMT_RTT_BUFFER_SIZE` environment variable at compile time
+/// `DEFMT_BBQ_BUFFER_SIZE` environment variable at compile time
 pub use crate::consts::BUF_SIZE;
 
 /// The `defmt-bbq` error type
