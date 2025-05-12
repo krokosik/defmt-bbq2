@@ -104,7 +104,7 @@
 
 pub(crate) mod consts;
 
-use bbqueue::{BBBuffer, GrantW, Producer};
+use bbq2::{nicknames::Memphis as BBBuffer2, prod_cons::stream::{StreamConsumer, StreamGrantR, StreamGrantW, StreamProducer}, traits::{coordination::cs::CsCoord, notifier::maitake::MaiNotSpsc, storage::Inline}};
 use core::{
     cell::UnsafeCell,
     mem::MaybeUninit,
@@ -140,29 +140,11 @@ impl From<BBQError> for Error {
     }
 }
 
-/// This is the consumer type given to the user to drain the logging queue.
-///
-/// It is a re-export of the [bbqueue::Consumer](https://docs.rs/bbqueue/latest/bbqueue/struct.Consumer.html) type.
-///
-pub use bbqueue::Consumer;
-
 /// An error returned by the underlying bbqueue storage
 ///
 /// It is a re-export of the [bbqueue::Error](https://docs.rs/bbqueue/latest/bbqueue/enum.Error.html) type.
 ///
 pub use bbqueue::Error as BBQError;
-
-/// This is the Reader Grant type given to the user as a view of the logging queue.
-///
-/// It is a re-export of the [bbqueue::GrantR](https://docs.rs/bbqueue/latest/bbqueue/struct.GrantR.html) type.
-///
-pub use bbqueue::GrantR;
-
-/// This is the Split Reader Grant type given to the user as a view of the logging queue.
-///
-/// It is a re-export of the [bbqueue::SplitGrantR](https://docs.rs/bbqueue/latest/bbqueue/struct.SplitGrantR.html) type.
-///
-pub use bbqueue::SplitGrantR;
 
 // ----------------------------------------------------------------------------
 // init() function - this is the (only) user facing interface
@@ -180,7 +162,8 @@ pub use bbqueue::SplitGrantR;
 ///
 /// [Consumer docs]: https://docs.rs/bbqueue/latest/bbqueue/struct.Consumer.html
 pub fn init() -> Result<DefmtConsumer, Error> {
-    let (prod, cons) = BBQ.try_split()?;
+    let prod = BBQ2.stream_producer();
+    let cons = BBQ2.stream_consumer();
 
     // NOTE: We are okay to treat the following as safe, as the BBQueue
     // split operation is guaranteed to only return Ok once in a
@@ -214,14 +197,8 @@ impl DefmtConsumer {
     /// contain ALL available bytes, if the writer has wrapped around. The
     /// remaining bytes will be available after all readable bytes are
     /// released
-    pub fn read(&mut self) -> Result<GrantR<'static, BUF_SIZE>, Error> {
-        Ok(self.cons.read()?)
-    }
-
-    /// Obtains two disjoint slices, which are each contiguous of committed bytes.
-    /// Combined these contain all previously commited data at the time of read
-    pub fn split_read(&mut self) -> Result<SplitGrantR<'static, BUF_SIZE>, Error> {
-        Ok(self.cons.split_read()?)
+    pub async fn read(&mut self) -> GrantR<'static, BUF_SIZE> {
+        self.cons.wait_read().await
     }
 }
 
@@ -397,8 +374,24 @@ unsafe impl Sync for UnsafeGrantW {}
 // Globals
 // ----------------------------------------------------------------------------
 
+type BBQ = BBBuffer2<BUF_SIZE, MaiNotSpsc>;
+type Producer<'d, const N: usize> = StreamProducer<&'d BBQ, Inline<N>, CsCoord, MaiNotSpsc>;
+
+/// This is the consumer type given to the user to drain the logging queue.
+///
+type Consumer<'d, const N: usize> = StreamConsumer<&'d BBQ, Inline<N>, CsCoord, MaiNotSpsc>;
+
+/// This is the Reader Grant type given to the user as a view of the logging queue.
+///
+type GrantR<'d, const N: usize> = StreamGrantR<&'d BBQ, Inline<N>, CsCoord, MaiNotSpsc>;
+
+/// This is the Writer Grant type given to the user as a view of the logging queue.
+///
+type GrantW<'d, const N: usize> = StreamGrantW<&'d BBQ, Inline<N>, CsCoord, MaiNotSpsc>;
+
+
 // The underlying byte storage containing the logs. Always valid
-static BBQ: BBBuffer<BUF_SIZE> = BBBuffer::new();
+static BBQ2: BBQ = BBBuffer2::new();
 
 // A tracking variable for ensuring state. Always valid.
 static BBQ_STATE: AtomicU8 = AtomicU8::new(logstate::UNINIT);
