@@ -104,11 +104,15 @@
 
 pub(crate) mod consts;
 
-use bbq2::{nicknames::Memphis as BBBuffer2, prod_cons::stream::{StreamConsumer, StreamGrantR, StreamGrantW, StreamProducer}, traits::{coordination::cs::CsCoord, notifier::maitake::MaiNotSpsc, storage::Inline}};
+use bbq2::{
+    nicknames::Memphis as BBBuffer2,
+    prod_cons::stream::{StreamConsumer, StreamGrantR, StreamGrantW, StreamProducer},
+    traits::{coordination::cs::CsCoord, notifier::maitake::MaiNotSpsc, storage::Inline},
+};
 use core::{
     cell::UnsafeCell,
     mem::MaybeUninit,
-    sync::atomic::{AtomicBool, AtomicUsize, AtomicU8, Ordering},
+    sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering},
 };
 use cortex_m::{interrupt, register};
 
@@ -269,7 +273,10 @@ impl UnsafeProducer {
     // TODO: Could be made safe if we ensure the reference is only taken
     // once. For now, leave unsafe
     unsafe fn get_mut(&self) -> Result<&mut Producer<'static, BUF_SIZE>, Error> {
-        latch_assert_eq(logstate::INIT_NO_STORED_GRANT, BBQ_STATE.load(Ordering::Relaxed))?;
+        latch_assert_eq(
+            logstate::INIT_NO_STORED_GRANT,
+            BBQ_STATE.load(Ordering::Relaxed),
+        )?;
 
         // NOTE: `UnsafeCell` and `MaybeUninit` are both `#[repr(Transparent)],
         // meaning this direct cast is acceptable
@@ -312,7 +319,10 @@ impl UnsafeGrantW {
     /// MUST be done in a critical section.
     unsafe fn put(&self, grant: GrantW<'static, BUF_SIZE>, offset: usize) -> Result<(), Error> {
         // Note: This also catches the "already latched" state check
-        latch_assert_eq(logstate::INIT_NO_STORED_GRANT, BBQ_STATE.load(Ordering::Relaxed))?;
+        latch_assert_eq(
+            logstate::INIT_NO_STORED_GRANT,
+            BBQ_STATE.load(Ordering::Relaxed),
+        )?;
 
         self.uc_mu_fgw.get().write(MaybeUninit::new(grant));
         self.offset.store(offset, Ordering::Relaxed);
@@ -363,7 +373,7 @@ impl UnsafeGrantW {
                 }
 
                 return Err(Error::InternalLatchingFault);
-            },
+            }
         })
     }
 }
@@ -388,7 +398,6 @@ type GrantR<'d, const N: usize> = StreamGrantR<&'d BBQ, Inline<N>, CsCoord, MaiN
 /// This is the Writer Grant type given to the user as a view of the logging queue.
 ///
 type GrantW<'d, const N: usize> = StreamGrantW<&'d BBQ, Inline<N>, CsCoord, MaiNotSpsc>;
-
 
 // The underlying byte storage containing the logs. Always valid
 static BBQ2: BBQ = BBBuffer2::new();
@@ -451,7 +460,9 @@ unsafe impl defmt::Logger for Logger {
         if bail {
             // If we just disabled interrupts, re-enable interrupts, then return
             if primask.is_active() {
-                unsafe { interrupt::enable(); }
+                unsafe {
+                    interrupt::enable();
+                }
             }
             return;
         }
@@ -552,7 +563,7 @@ fn do_write(mut remaining: &[u8]) {
                         }
                     }
                 }
-            },
+            }
 
             // No grant available, just return. Bytes are dropped
             Ok(None) => return,
